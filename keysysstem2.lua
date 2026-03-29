@@ -3,7 +3,7 @@
 -- ==========================================
 local PlatoID = "22995" 
 local PlatoToken = "a6b10490-b2b0-4790-9168-5bced1293248" 
-local Link_Raw_Script_Loi = "https://raw.githubusercontent.com/bjo0vj/scriptsystemopbloxstike/refs/heads/main/script.lua" 
+local Link_Raw_Script_Loi = "https://raw.githubusercontent.com/bjo0vj/scriptsystemopbloxstike/main/script.lua" 
 
 -- ==========================================
 -- PHẦN CODE BÊN DƯỚI GIỮ NGUYÊN KHÔNG SỬA
