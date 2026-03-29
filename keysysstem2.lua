@@ -1,16 +1,17 @@
 -- ==========================================
--- 1. ĐIỀN 3 THÔNG TIN CỦA BẠN VÀO ĐÂY:
+-- 1. ĐIỀN THÔNG TIN CỦA BẠN VÀO ĐÂY:
 -- ==========================================
-local PlatoID = "22995" 
-local PlatoToken = "a6b10490-b2b0-4790-9168-5bced1293248" 
+local PlatoID = 22995
 local Link_Raw_Script_Loi = "https://raw.githubusercontent.com/bjo0vj/scriptsystemopbloxstike/main/script.lua" 
 
 -- ==========================================
--- PHẦN CODE BÊN DƯỚI GIỮ NGUYÊN KHÔNG SỬA
+-- GIAO DIỆN VÀ LOGIC CHECK KEY BÊN TRONG (CHỐNG LỖI NIL)
 -- ==========================================
-local Plato = loadstring(game:HttpGet("https://api.platoboost.com/public/library/v1.lua"))()
+local KeyGui = Instance.new("ScreenGui")
+-- Bọc pcall để chống lỗi CoreGui trên các bản hack yếu
+local success = pcall(function() KeyGui.Parent = game.CoreGui end)
+if not success then KeyGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui") end
 
-local KeyGui = Instance.new("ScreenGui", game.CoreGui)
 local MainFrame = Instance.new("Frame", KeyGui)
 MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 MainFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
@@ -57,31 +58,44 @@ Status.Size = UDim2.new(1, 0, 0, 20)
 Status.Text = "Vui lòng lấy Key để tiếp tục!"
 Status.TextColor3 = Color3.fromRGB(200, 200, 200)
 
+-- ==========================================
+-- LOGIC NÚT BẤM (VIẾT TRỰC TIẾP, ĐÁP LUÔN API PHỤ)
+-- ==========================================
 GetKeyBtn.MouseButton1Click:Connect(function()
-    Status.Text = "Đang tạo link, chờ chút..."
-    local success, link = Plato.GetLink({
-        Identifier = PlatoID,
-        Configuration = PlatoToken
-    })
-    if success then
-        setclipboard(link)
-        Status.Text = "Đã copy link! Ra Google Chrome dán nhé."
-    else
-        Status.Text = "Lỗi tạo link! Hãy thử lại."
-    end
+    local link = "https://gateway.platoboost.com/a/" .. tostring(PlatoID)
+    setclipboard(link)
+    Status.Text = "Đã copy link! Ra Google Chrome dán nhé."
 end)
 
 CheckBtn.MouseButton1Click:Connect(function()
     local nhap = KeyInput.Text
     if nhap == "" then Status.Text = "Bạn chưa dán Key!" return end
+    Status.Text = "Đang kiểm tra Key với Server..."
     
-    Status.Text = "Đang kiểm tra Key..."
-    Plato.Verify({
-        Identifier = PlatoID,
-        Configuration = PlatoToken,
-        Key = nhap,
-        Success = function()
-            Status.Text = "Key đúng! Đang mở script..."
+    local req = request or http_request or (syn and syn.request)
+    if not req then
+        Status.Text = "Lỗi: Phần mềm hack không hỗ trợ Check Key!"
+        return
+    end
+
+    local HttpService = game:GetService("HttpService")
+    local successAPI, res = pcall(function()
+        return req({
+            Url = "https://api.platoboost.com/v1/public/whitelist/verify",
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = HttpService:JSONEncode({
+                service = PlatoID,
+                key = nhap,
+                identifier = tostring(game.Players.LocalPlayer.UserId)
+            })
+        })
+    end)
+
+    if successAPI and res and res.Body then
+        local ok, data = pcall(function() return HttpService:JSONDecode(res.Body) end)
+        if ok and data.success == true then
+            Status.Text = "Key chuẩn! Đang mở script..."
             task.wait(1)
             KeyGui:Destroy()
             
@@ -90,10 +104,10 @@ CheckBtn.MouseButton1Click:Connect(function()
             
             -- GỌI SCRIPT LÕI TỪ GITHUB VỀ CHẠY
             loadstring(game:HttpGet(Link_Raw_Script_Loi))()
-        end,
-        Failure = function()
+        else
             Status.Text = "Key sai hoặc hết hạn!"
         end
-
-    })
+    else
+        Status.Text = "Lỗi máy chủ Platoboost! Thử lại sau."
+    end
 end)
